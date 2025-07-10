@@ -4,6 +4,24 @@ This guide explains how to download, extract, and convert the TAC2017 dataset to
 
 ---
 
+## 📖 About the Dataset
+
+The TAC2017 Adverse Reactions dataset was created by the U.S. National Library of Medicine as part of the Text Analysis Conference (TAC) Adverse Drug Reaction Extraction task.
+
+**What it contains:**
+- FDA-approved drug labels in XML format.
+- High-quality annotations:
+  - **Adverse Reactions:** spans of text describing adverse events.
+  - **Relations:** including negation and severity.
+  - Normalization to MedDRA codes.
+
+**Why this dataset is valuable:**
+- It is considered a benchmark corpus for evaluating NER and relation extraction models in the pharmacovigilance domain.
+- It has been used in numerous publications and shared tasks.
+- It provides real regulatory language, not synthetic text.
+
+---
+
 ## 1️⃣ Download the Dataset
 
 1. Go to:
@@ -79,23 +97,64 @@ Each example in `tac2017_adrs.jsonl` has this structure:
 }
 ```
 
-- **Medicine_list**: always contains the document drug (e.g., `ACTEMRA`).
-- **ADE_list**: all spans labeled as Adverse Reactions.
-- **ADR_list**: pairs linking the drug to each reaction (negated reactions are excluded).
+**Fields:**
+- `id`: Document identifier (usually the drug name).
+- `text`: Full text of the drug label.
+- `input_text`: Same as text.
+- `Medicine_list`: One span representing the document drug.
+- `ADE_list`: All spans of text annotated as Adverse Reactions (multi-span mentions included).
+- `ADR_list`: Pairs linking the single drug (index 0) to each non-negated Adverse Reaction.
 
 ---
 
-## 6️⃣ Notes
+## 6️⃣ Important Notes
 
 - Negated reactions are **excluded** from `ADR_list` but included in `ADE_list`.
 - All offsets are character positions relative to `text`.
-- This JSONL can be used directly in your `get_instruction()` function.
+- If a mention has multiple discontinuous spans, all are included in `ADE_list`.
+- Duplicate spans are allowed, as multiple annotations may overlap.
 
 ---
 
-## 7️⃣ Validation (Optional)
+## 7️⃣ Validation
 
-To quickly check the output, you can run this snippet:
+To ensure data integrity, you can run the provided validation script:
+
+**validate_tac_jsonl.py**
+
+This script will:
+- Count total examples, spans, and relations.
+- Detect empty spans.
+- Detect out-of-bounds spans.
+- Report duplicate spans.
+- Verify ADR indices.
+
+**How to run:**
+
+```bash
+python validate_tac_jsonl.py
+```
+
+**Example output:**
+```
+=== Validation Report ===
+Examples processed : 99
+Total ADE spans    : 13847
+Total ADR links    : 12409
+Empty spans        : 0
+Out-of-bounds spans: 0
+Duplicate spans    : 464
+
+Note: duplicate spans detected. This is common when mentions overlap.
+```
+
+✅ **If you see `Out-of-bounds spans: 0` and `Empty spans: 0`, your dataset is valid.**
+
+---
+
+## 8️⃣ Quick Spot-Check (Optional)
+
+You can also inspect a few examples manually:
 
 ```python
 import json
@@ -110,4 +169,4 @@ with open("tac2017_adrs.jsonl") as f:
 
 ---
 
-✅ That’s it. You’re ready to start testing.
+✅ That’s it. You are ready to start testing your pipeline with clean, validated data.
