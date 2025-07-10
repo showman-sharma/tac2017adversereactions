@@ -18,23 +18,28 @@ def parse_tac_xml(xml_path):
     mentions = []
     for m in root.findall(".//Mention"):
         mtype = m.attrib["type"]
-        start = int(m.attrib["start"])
-        length = int(m.attrib["len"])
+
+        # Split start and length to handle multi-span mentions
+        starts = [int(s) for s in m.attrib["start"].split(",")]
+        lengths = [int(l) for l in m.attrib["len"].split(",")]
+        spans = [[s, s + l] for s, l in zip(starts, lengths)]
+        
         mentions.append({
             "id": m.attrib["id"],
             "type": mtype,
-            "start": start,
-            "end": start + length,
+            "spans": spans,
             "text": m.attrib["str"]
         })
         
-    # Build ADE list (Adverse Reactions)
+    # Build ADE list (all spans of Adverse Reactions)
     ade_mentions = [m for m in mentions if m["type"] == "AdverseReaction"]
-    ade_list = [[m["start"], m["end"]] for m in ade_mentions]
-    
+    ade_list = []
+    for m in ade_mentions:
+        ade_list.extend(m["spans"])
+
     # Map mention IDs to index
     mention_id_to_idx = {m["id"]: idx for idx, m in enumerate(ade_mentions)}
-    
+
     # Collect negated mentions
     negated_mentions = set()
     for rel in root.findall(".//Relation"):
