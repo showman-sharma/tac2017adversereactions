@@ -2,7 +2,7 @@ import json
 
 def validate_file(jsonl_path):
     total_examples = 0
-    total_ade_spans = 0
+    total_event_spans = 0
     total_adr_links = 0
     empty_spans = []
     out_of_bounds = []
@@ -14,17 +14,17 @@ def validate_file(jsonl_path):
             total_examples += 1
 
             text = ex["text"]
-            ade_spans = ex["ADE_list"]
+            event_spans = ex["Event_list"]  # updated key
             adr_list = ex["ADR_list"]
             text_length = len(text)
 
             # Count
-            total_ade_spans += len(ade_spans)
+            total_event_spans += len(event_spans)
             total_adr_links += len(adr_list)
 
             # Validate spans
             seen_spans = set()
-            for s, e in ade_spans:
+            for s, e in event_spans:
                 if s >= e:
                     empty_spans.append((ex["id"], s, e))
                 if e > text_length:
@@ -41,7 +41,7 @@ def validate_file(jsonl_path):
     # Summary
     print("\n=== Validation Report ===")
     print(f"Examples processed : {total_examples}")
-    print(f"Total ADE spans    : {total_ade_spans}")
+    print(f"Total Event spans  : {total_event_spans}")
     print(f"Total ADR links    : {total_adr_links}")
     print(f"Empty spans        : {len(empty_spans)}")
     print(f"Out-of-bounds spans: {len(out_of_bounds)}")
@@ -59,4 +59,4 @@ def validate_file(jsonl_path):
         print("\nNote: duplicate spans detected (may be OK if mentions overlap).")
 
 if __name__ == "__main__":
-    validate_file("tac2017_adrs.jsonl")
+    validate_file("tac2017_adrs_train.jsonl")

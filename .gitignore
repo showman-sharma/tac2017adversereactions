@@ -3,6 +3,10 @@ gold_xml/
 *.tar.gz
 *.jsonl
 
+train_xml/
+*.tar.gz
+*.jsonl
+
 # Ignore Python cache
 __pycache__/
 *.pyc

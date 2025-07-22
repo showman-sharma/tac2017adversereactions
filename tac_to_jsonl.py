@@ -19,10 +19,9 @@ def parse_tac_xml(xml_path):
     for m in root.findall(".//Mention"):
         mtype = m.attrib["type"]
 
-        # Split start and length to handle multi-span mentions
         starts = [int(s) for s in m.attrib["start"].split(",")]
         lengths = [int(l) for l in m.attrib["len"].split(",")]
-        spans = [[s, s + l] for s, l in zip(starts, lengths)]
+        spans = [[s, min(s + l, len(text))] for s, l in zip(starts, lengths)]
         
         mentions.append({
             "id": m.attrib["id"],
@@ -31,14 +30,14 @@ def parse_tac_xml(xml_path):
             "text": m.attrib["str"]
         })
         
-    # Build ADE list (all spans of Adverse Reactions)
-    ade_mentions = [m for m in mentions if m["type"] == "AdverseReaction"]
-    ade_list = []
-    for m in ade_mentions:
-        ade_list.extend(m["spans"])
+    # Build Event list (Adverse Reactions)
+    event_mentions = [m for m in mentions if m["type"] == "AdverseReaction"]
+    event_list = []
+    for m in event_mentions:
+        event_list.extend(m["spans"])
 
     # Map mention IDs to index
-    mention_id_to_idx = {m["id"]: idx for idx, m in enumerate(ade_mentions)}
+    mention_id_to_idx = {m["id"]: idx for idx, m in enumerate(event_mentions)}
 
     # Collect negated mentions
     negated_mentions = set()
@@ -48,28 +47,25 @@ def parse_tac_xml(xml_path):
 
     # Filter ADR list: include only non-negated ADRs
     adr_list = []
-    for idx, m in enumerate(ade_mentions):
+    for idx, m in enumerate(event_mentions):
         if m["id"] not in negated_mentions:
-            # Since we have only one drug per document, index is 0
-            adr_list.append([0, idx])
+            adr_list.append([0, idx])  # 0 = single document-level drug
 
-    # Medicine_list: treat the label drug as a synthetic span at start
-    med_span = [0, len(label_drug)]
+    # Drug_list: treat the label drug as a synthetic span at start
+    drug_span = [0, len(label_drug)]
 
     result = {
         "id": os.path.splitext(os.path.basename(xml_path))[0],
         "text": text,
-        "input_text": text,
-        "Medicine_list": [med_span],
-        "ADE_list": ade_list,
+        "Drug_list": [drug_span],
+        "Event_list": event_list,
         "ADR_list": adr_list
     }
     return result
 
 if __name__ == "__main__":
-    # Path to your TAC XML files
-    input_dir = "gold_xml"
-    output_file = "tac2017_adrs.jsonl"
+    input_dir = "train_xml"
+    output_file = "tac2017_adrs_train.jsonl"
 
     xml_files = glob.glob(os.path.join(input_dir, "*.xml"))
     print(f"Found {len(xml_files)} files.")
