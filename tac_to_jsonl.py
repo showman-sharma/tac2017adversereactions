@@ -14,9 +14,14 @@ def parse_tac_xml(xml_path):
     current_offset = 0
     for sec in root.findall(".//Section"):
         sec_text = ''.join(sec.itertext())
+        sec_id = sec.attrib.get("id")
+        if sec_id:
+            section_offsets[sec_id] = current_offset
         sections.append(sec_text)
+        current_offset += len(sec_text)
         if not sec_text.endswith("\n"):
             sections.append("\n")
+            current_offset += 1
     text = "".join(sections).rstrip("\n")
     
     mentions = []
