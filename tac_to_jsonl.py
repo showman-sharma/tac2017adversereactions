@@ -10,6 +10,8 @@ def parse_tac_xml(xml_path):
     
     # Concatenate all sections as the input text
     sections = []
+    section_offsets = {}
+    current_offset = 0
     for sec in root.findall(".//Section"):
         sec_text = ''.join(sec.itertext())
         sections.append(sec_text)
@@ -20,9 +22,17 @@ def parse_tac_xml(xml_path):
     mentions = []
     for m in root.findall(".//Mention"):
         mtype = m.attrib["type"]
-        starts = [int(s) for s in m.attrib["start"].split(",")]
-        lengths = [int(l) for l in m.attrib["len"].split(",")]
-        spans = [[s, min(s + l, len(text))] for s, l in zip(starts, lengths)]
+        start_vals = m.attrib["start"].split(",")
+        length_vals = m.attrib["len"].split(",")
+        sec_ids = m.attrib.get("sec_id", "").split(",")
+        if len(sec_ids) == 1 and len(start_vals) > 1:
+            sec_ids = sec_ids * len(start_vals)
+        global_starts = []
+        for s, sec_id in zip(start_vals, sec_ids):
+            base = section_offsets.get(sec_id, 0)
+            global_starts.append(base + int(s))
+        lengths = [int(l) for l in length_vals]
+        spans = [[s, min(s + l, len(text))] for s, l in zip(global_starts, lengths)]
         mentions.append({
             "id": m.attrib["id"],
             "type": mtype,
