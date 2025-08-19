@@ -11,9 +11,11 @@ def parse_tac_xml(xml_path):
     # Concatenate all sections as the input text
     sections = []
     for sec in root.findall(".//Section"):
-        if sec.text:
-            sections.append(sec.text.strip())
-    text = "\n\n".join(sections)
+        sec_text = ''.join(sec.itertext())
+        sections.append(sec_text)
+        if not sec_text.endswith("\n"):
+            sections.append("\n")
+    text = "".join(sections).rstrip("\n")
     
     mentions = []
     for m in root.findall(".//Mention"):
